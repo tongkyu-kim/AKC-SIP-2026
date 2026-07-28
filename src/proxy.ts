@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { SITE_AUTH_COOKIE } from "@/lib/auth";
 
 // Shared-password gate for the whole dashboard, since it holds sensitive
 // contact details (ambassador phone numbers/emails, etc). Set SITE_PASSWORD
@@ -9,19 +10,18 @@ export function proxy(request: NextRequest) {
   const sitePassword = process.env.SITE_PASSWORD;
   if (!sitePassword) return NextResponse.next();
 
-  const authHeader = request.headers.get("authorization");
-  if (authHeader?.startsWith("Basic ")) {
-    const decoded = Buffer.from(authHeader.slice(6), "base64").toString("utf-8");
-    const password = decoded.slice(decoded.indexOf(":") + 1);
-    if (password === sitePassword) {
-      return NextResponse.next();
-    }
+  // The login page (and the server action that posts back to it) must stay
+  // reachable, or nobody could ever get past the gate.
+  if (request.nextUrl.pathname.startsWith("/login")) {
+    return NextResponse.next();
   }
 
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="AKC-SIP-2026"' },
-  });
+  const cookie = request.cookies.get(SITE_AUTH_COOKIE);
+  if (cookie?.value === sitePassword) {
+    return NextResponse.next();
+  }
+
+  return NextResponse.redirect(new URL("/login", request.url));
 }
 
 export const config = {
