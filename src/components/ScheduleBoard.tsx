@@ -6,8 +6,10 @@ import {
   DragOverlay,
   PointerSensor,
   closestCenter,
+  pointerWithin,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -48,6 +50,20 @@ import type { Comment, DayWithSessions, Speaker, Session, SessionWithChildren, S
 function maxOrder(items: { order_index: number }[]) {
   return items.length ? Math.max(...items.map((i) => i.order_index)) + 1 : 0;
 }
+
+// closestCenter alone picks whichever droppable's center is numerically
+// nearest, even with zero visual overlap — across the whole page, not just
+// nearby elements. With the roster panels and the schedule table sharing one
+// DndContext, that let a small drag inside a roster's status/country groups
+// occasionally "win" against a distant, unrelated session/subsession row.
+// pointerWithin only matches droppables the pointer is actually over, so try
+// that first and only fall back to closestCenter (needed for the sortable
+// day/session reordering feel) when the pointer isn't within anything.
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  return closestCenter(args);
+};
 
 export function ScheduleBoard({
   initialDays,
@@ -493,7 +509,7 @@ export function ScheduleBoard({
           </div>
         ) : (
           <div className="mx-auto flex w-full max-w-[2600px] flex-col px-4 py-6 lg:h-full lg:min-h-0">
-            <DndContext id="workshop-schedule-dnd" sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <DndContext id="workshop-schedule-dnd" sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
               <ActiveDragTypeContext.Provider value={activeDrag?.type ?? null}>
                 <div className="grid grid-cols-1 items-start gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_340px_340px_340px] lg:items-stretch">
                   <div className="min-w-0 space-y-6 lg:min-h-0 lg:overflow-y-auto">
