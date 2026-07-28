@@ -134,7 +134,7 @@ function SpeakerForm({
         {values.category === "participant" && (
           <Field label="Country">
             <select className={inputClass} value={values.country} onChange={(e) => set("country", e.target.value)}>
-              <option value="">Unassigned</option>
+              <option value="">Others</option>
               {ASEAN_COUNTRIES.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -146,7 +146,7 @@ function SpeakerForm({
         {values.category === "organizer" && (
           <Field label="Organization">
             <select className={inputClass} value={values.country} onChange={(e) => set("country", e.target.value)}>
-              <option value="">Unassigned</option>
+              <option value="">Others</option>
               {ORGANIZER_ORGS.map((org) => (
                 <option key={org} value={org}>
                   {org}

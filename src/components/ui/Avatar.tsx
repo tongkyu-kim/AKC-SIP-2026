@@ -16,9 +16,10 @@ export function Avatar({ speaker, size = "sm" }: { speaker: Speaker; size?: "xs"
   const showFlag = (speaker.category === "participant" || speaker.category === "vip") && !!speaker.country;
 
   return (
-    // Outer wrapper has no overflow-hidden of its own — the VIP star sits on
-    // it (not on the clipped circle below) so its negative offset is never
-    // cropped by the circle's own overflow-hidden mask.
+    // Outer wrapper has no overflow-hidden of its own — the VIP star and the
+    // status dot both sit on it (not on the clipped circle below) so their
+    // negative offsets are never cropped by the circle's own overflow-hidden
+    // mask.
     <span className="relative inline-flex flex-shrink-0" title={speaker.name}>
       <span
         className={`relative flex items-center justify-center overflow-hidden rounded-full font-semibold text-white ${dims} ${
@@ -26,15 +27,15 @@ export function Avatar({ speaker, size = "sm" }: { speaker: Speaker; size?: "xs"
         }`}
       >
         {showFlag ? <CountryFlag country={speaker.country!} className="h-full w-full" /> : initials(speaker.name)}
-        {/* Organizers skip the booking-status workflow entirely, so no status dot for them. */}
-        {speaker.category !== "organizer" && (
-          <span
-            className={`absolute -bottom-0.5 -right-0.5 rounded-full ${ring} ring-white dark:ring-zinc-900 ${STATUS_DOT[speaker.status]} ${
-              size === "md" ? "h-4 w-4" : "h-2.5 w-2.5"
-            }`}
-          />
-        )}
       </span>
+      {/* Organizers skip the booking-status workflow entirely, so no status dot for them. */}
+      {speaker.category !== "organizer" && (
+        <span
+          className={`absolute -bottom-0.5 -right-0.5 rounded-full ${ring} ring-white dark:ring-zinc-900 ${STATUS_DOT[speaker.status]} ${
+            size === "md" ? "h-4 w-4" : "h-2.5 w-2.5"
+          }`}
+        />
+      )}
       {speaker.category === "vip" && (
         <span className={`absolute -left-1.5 -top-1.5 leading-none text-black drop-shadow-[0_0_1px_rgba(255,255,255,0.9)] ${starSize}`} aria-label="VIP">
           ★

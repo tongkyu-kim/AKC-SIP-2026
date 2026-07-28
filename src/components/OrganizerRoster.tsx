@@ -9,7 +9,7 @@ import { useActiveDragType } from "@/lib/dnd";
 import { createSpeaker } from "@/lib/api";
 import { ORGANIZER_ORGS, type Speaker } from "@/lib/types";
 
-const UNASSIGNED = "Unassigned";
+const UNASSIGNED = "Others";
 const GROUPS = [...ORGANIZER_ORGS, UNASSIGNED];
 
 // Organizers skip the booking-status workflow entirely (always confirmed/

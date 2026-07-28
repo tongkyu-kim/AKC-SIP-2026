@@ -495,7 +495,7 @@ export function ScheduleBoard({
           <div className="mx-auto flex w-full max-w-[2600px] flex-col px-4 py-6 lg:h-full lg:min-h-0">
             <DndContext id="workshop-schedule-dnd" sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
               <ActiveDragTypeContext.Provider value={activeDrag?.type ?? null}>
-                <div className="grid grid-cols-1 items-start gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_300px_300px_300px] lg:items-stretch">
+                <div className="grid grid-cols-1 items-start gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_340px_340px_340px] lg:items-stretch">
                   <div className="min-w-0 space-y-6 lg:min-h-0 lg:overflow-y-auto">
                     <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
                       <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">View:</span>

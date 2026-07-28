@@ -10,7 +10,7 @@ import { useActiveDragType } from "@/lib/dnd";
 import { createSpeaker } from "@/lib/api";
 import { ASEAN_COUNTRIES, PARTICIPANT_STATUSES, PARTICIPANT_STATUS_LABEL, type Speaker, type SpeakerStatus } from "@/lib/types";
 
-const UNASSIGNED = "Unassigned";
+const UNASSIGNED = "Others";
 const GROUPS = [...ASEAN_COUNTRIES, UNASSIGNED];
 
 function CountrySection({ country, participants, onOpenBio }: { country: string; participants: Speaker[]; onOpenBio: (s: Speaker) => void }) {

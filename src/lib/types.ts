@@ -177,7 +177,7 @@ export const ORGANIZER_ORGS: string[] = ["AKC", "KMAC", "WEtheTEAM", "KOFICE"];
 // and organizers show their org (both more useful than the generic category
 // name), everyone else shows their category (VIP/Speaker/Moderator).
 export function personLabel(speaker: Speaker): string {
-  if (speaker.category === "participant" || speaker.category === "organizer") return speaker.country || "Unassigned";
+  if (speaker.category === "participant" || speaker.category === "organizer") return speaker.country || "Others";
   return CATEGORY_LABEL[speaker.category];
 }
 
