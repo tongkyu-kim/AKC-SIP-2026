@@ -118,7 +118,7 @@ function SubsessionForm({
       {isFlight ? (
         <>
           <div className="grid grid-cols-3 gap-3">
-            <Field label="Flight code">
+            <Field label="Train/Flight code">
               <input className={inputClass} value={values.flight_code} onChange={(e) => set("flight_code", e.target.value)} placeholder="KE672" />
             </Field>
             <Field label="Departure time">
