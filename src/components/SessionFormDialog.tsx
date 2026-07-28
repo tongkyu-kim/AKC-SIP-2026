@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Field, inputClass, Button } from "@/components/ui/Field";
-import type { Day, Session, SessionType } from "@/lib/types";
+import { StatusBadge } from "@/components/StatusBadge";
+import type { Day, Session, SessionType, SessionWithChildren } from "@/lib/types";
 
 const SESSION_TYPES: { value: SessionType; label: string }[] = [
   { value: "session", label: "Session" },
@@ -42,7 +43,9 @@ function toValues(session: Session | null, defaultDayId: string): SessionFormVal
 }
 
 // Mounted only while the modal is open, so its form state is naturally fresh
-// each time (no effect needed to resync state from props on open).
+// each time (no effect needed to resync state from props on open). `session`
+// itself keeps flowing in on every render so the assigned-speakers list
+// stays live while remove calls resolve (same pattern as SubsessionForm).
 function SessionForm({
   session,
   days,
@@ -50,13 +53,15 @@ function SessionForm({
   onClose,
   onSave,
   onDelete,
+  onRemoveSpeakerLink,
 }: {
-  session: Session | null;
+  session: SessionWithChildren | null;
   days: Day[];
   defaultDayId: string;
   onClose: () => void;
   onSave: (values: SessionFormValues) => Promise<void>;
   onDelete?: (session: Session) => Promise<void>;
+  onRemoveSpeakerLink: (linkId: string) => Promise<void>;
 }) {
   const [values, setValues] = useState<SessionFormValues>(() => toValues(session, defaultDayId));
   const [saving, setSaving] = useState(false);
@@ -127,6 +132,29 @@ function SessionForm({
         />
       </Field>
 
+      {session && (
+        <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+          <h4 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">Assigned speakers</h4>
+          <div className="space-y-1.5">
+            {session.speakers.length === 0 && (
+              <p className="text-xs italic text-zinc-400">No speakers assigned yet — drag a speaker card from the roster onto this session.</p>
+            )}
+            {session.speakers.map((link) => (
+              <div key={link.id} className="flex items-center justify-between rounded-md bg-zinc-50 px-2.5 py-1.5 text-sm dark:bg-zinc-800/60">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="truncate font-medium text-zinc-800 dark:text-zinc-100">{link.speaker.name}</span>
+                  <span className="flex-shrink-0 text-xs text-zinc-500 dark:text-zinc-400">({link.role})</span>
+                  {link.speaker.category !== "organizer" && <StatusBadge status={link.speaker.status} />}
+                </div>
+                <button className="flex-shrink-0 text-xs text-red-500 hover:underline" onClick={() => onRemoveSpeakerLink(link.id)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-2">
         <div>
           {session && onDelete && (
@@ -164,14 +192,16 @@ export function SessionFormDialog({
   onClose,
   onSave,
   onDelete,
+  onRemoveSpeakerLink,
 }: {
   open: boolean;
-  session: Session | null;
+  session: SessionWithChildren | null;
   days: Day[];
   defaultDayId?: string;
   onClose: () => void;
   onSave: (values: SessionFormValues) => Promise<void>;
   onDelete?: (session: Session) => Promise<void>;
+  onRemoveSpeakerLink: (linkId: string) => Promise<void>;
 }) {
   return (
     <Modal open={open} onClose={onClose} title={session ? "Edit Session" : "Add Session"} widthClass="max-w-xl">
@@ -183,6 +213,7 @@ export function SessionFormDialog({
           onClose={onClose}
           onSave={onSave}
           onDelete={onDelete}
+          onRemoveSpeakerLink={onRemoveSpeakerLink}
         />
       )}
     </Modal>

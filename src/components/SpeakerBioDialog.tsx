@@ -4,19 +4,27 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Field";
 import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/StatusBadge";
-import { CATEGORY_LABEL, type Speaker } from "@/lib/types";
+import type { AssignmentKind } from "@/lib/dnd";
+import { personLabel, type Speaker } from "@/lib/types";
 
 export function SpeakerBioDialog({
   speaker,
+  assignment,
   onClose,
   onEdit,
+  onRemoveFromProgram,
 }: {
   speaker: Speaker | null;
+  // Present only when this popup was opened from a chip already assigned to
+  // a session/subsession — enables the "Remove from program" button below,
+  // scoped to just that one assignment (never touches the roster record).
+  assignment?: { linkId: string; fromKind: AssignmentKind; fromId: string } | null;
   onClose: () => void;
   onEdit?: (speaker: Speaker) => void;
+  onRemoveFromProgram?: () => Promise<void>;
 }) {
   return (
-    <Modal open={!!speaker} onClose={onClose} title="Speaker Bio">
+    <Modal open={!!speaker} onClose={onClose} title="Bio">
       {speaker && (
         <div className="space-y-4">
           <div className="flex items-start gap-4">
@@ -34,8 +42,8 @@ export function SpeakerBioDialog({
               <h3 className="truncate text-base font-semibold text-zinc-900 dark:text-zinc-100">{speaker.name}</h3>
               {speaker.title_org && <p className="text-sm text-zinc-500 dark:text-zinc-400">{speaker.title_org}</p>}
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <StatusBadge status={speaker.status} />
-                <span className="text-xs font-medium text-zinc-400">{CATEGORY_LABEL[speaker.category]}</span>
+                {speaker.category !== "organizer" && <StatusBadge status={speaker.status} />}
+                <span className="text-xs font-medium text-zinc-400">{personLabel(speaker)}</span>
               </div>
             </div>
           </div>
@@ -60,20 +68,29 @@ export function SpeakerBioDialog({
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" onClick={onClose}>
-              Close
-            </Button>
-            {onEdit && (
-              <Button
-                variant="primary"
-                onClick={() => {
-                  onEdit(speaker);
-                }}
-              >
-                Edit speaker
+          <div className="flex items-center justify-between gap-2 pt-2">
+            <div>
+              {assignment && onRemoveFromProgram && (
+                <Button variant="danger" onClick={onRemoveFromProgram}>
+                  Remove from program
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={onClose}>
+                Close
               </Button>
-            )}
+              {onEdit && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    onEdit(speaker);
+                  }}
+                >
+                  Edit person
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}

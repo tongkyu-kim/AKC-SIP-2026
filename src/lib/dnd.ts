@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { SpeakerStatus } from "./types";
+import type { SpeakerCategory, SpeakerStatus } from "./types";
 
 // What kind of thing a speaker is currently assigned to — a session directly
 // (e.g. an overall chair) or one of its subsessions/"program items".
@@ -24,13 +24,28 @@ export type DragData =
       role: string;
       fromKind: AssignmentKind;
       fromId: string;
-    };
+    }
+  // A team pill (e.g. "VIPS", "AKC") dragged from the bottom of a roster
+  // panel — dropping it onto a session/subsession attaches the pill itself
+  // as a standalone marker there (who "stands" on this program), entirely
+  // separate from the assigned-people list. It never touches individual
+  // speaker records.
+  | { type: "group"; label: string };
 
 // Drop targets include everything draggable can also land on (sessions/subsessions
 // accept re-ordering, and both accept a dropped speaker) plus the speaker roster's
-// status columns and the participant roster's country groups — both droppable-only,
-// nothing drags a status/country column itself.
-export type DropData = DragData | { type: "status"; status: SpeakerStatus } | { type: "country"; country: string };
+// status/type columns, the participant roster's country/status groups, and the
+// organizer roster's organization groups — all droppable-only, nothing drags a
+// status/country/category/organization column itself. "organization" is kept
+// distinct from "country" (even though both just set the same `country` column
+// under the hood) so an organizer card can never land on a participant's country
+// group or vice versa — see the isOrganizer guard in ScheduleBoard.
+export type DropData =
+  | DragData
+  | { type: "status"; status: SpeakerStatus }
+  | { type: "country"; country: string }
+  | { type: "category"; category: SpeakerCategory }
+  | { type: "organization"; organization: string };
 
 // Lets deeply-nested drop targets (subsession rows, status columns) know what kind of
 // thing is currently being dragged, so they only light up as a drop target for

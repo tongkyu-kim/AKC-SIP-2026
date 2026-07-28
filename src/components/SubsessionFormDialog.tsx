@@ -96,7 +96,7 @@ function SubsessionForm({
         <Field label="Kind">
           <select className={inputClass} value={values.kind} onChange={(e) => set("kind", e.target.value as SubsessionKind)}>
             <option value="program">Program item</option>
-            <option value="flight">Flight</option>
+            <option value="flight">Travel</option>
           </select>
         </Field>
       </div>
@@ -129,10 +129,10 @@ function SubsessionForm({
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Departure airport">
+            <Field label="Departing city">
               <input className={inputClass} value={values.departure_airport} onChange={(e) => set("departure_airport", e.target.value)} placeholder="Kuala Lumpur (KUL)" />
             </Field>
-            <Field label="Arrival city (Korea)">
+            <Field label="Arriving city">
               <input className={inputClass} value={values.arrival_city} onChange={(e) => set("arrival_city", e.target.value)} placeholder="Incheon (ICN)" />
             </Field>
           </div>
@@ -160,7 +160,7 @@ function SubsessionForm({
           <div className="space-y-1.5">
             {subsession.speakers.length === 0 && (
               <p className="text-xs italic text-zinc-400">
-                {isFlight ? "No passengers yet — drag a card from either roster onto this flight." : "No speakers assigned yet — drag a speaker card from the roster onto this item."}
+                {isFlight ? "No passengers yet — drag a card from either roster onto this route." : "No speakers assigned yet — drag a speaker card from the roster onto this item."}
               </p>
             )}
             {subsession.speakers.map((link) => (
@@ -168,7 +168,7 @@ function SubsessionForm({
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="truncate font-medium text-zinc-800 dark:text-zinc-100">{link.speaker.name}</span>
                   <span className="flex-shrink-0 text-xs text-zinc-500 dark:text-zinc-400">({link.role})</span>
-                  <StatusBadge status={link.speaker.status} />
+                  {link.speaker.category !== "organizer" && <StatusBadge status={link.speaker.status} />}
                 </div>
                 <button className="flex-shrink-0 text-xs text-red-500 hover:underline" onClick={() => onRemoveSpeakerLink(link.id)}>
                   Remove
@@ -191,7 +191,7 @@ function SubsessionForm({
                 }
               }}
             >
-              Delete {isFlight ? "flight" : "subsession"}
+              Delete {isFlight ? "route" : "subsession"}
             </Button>
           )}
         </div>
@@ -228,7 +228,15 @@ export function SubsessionFormDialog({
   onRemoveSpeakerLink: (linkId: string) => Promise<void>;
 }) {
   return (
-    <Modal open={open} onClose={onClose} title={subsession ? "Edit Item" : "Add Item"} widthClass="max-w-xl">
+    <Modal
+      open={open}
+      onClose={onClose}
+      // A new item's kind isn't chosen yet (defaults to "program" until the
+      // Kind dropdown is touched), so only an existing item's actual kind
+      // can drive the title — new items stay generic.
+      title={subsession ? (subsession.kind === "flight" ? "Edit Route" : "Edit Item") : "Add Item"}
+      widthClass="max-w-xl"
+    >
       {open && (
         <SubsessionForm
           subsession={subsession}

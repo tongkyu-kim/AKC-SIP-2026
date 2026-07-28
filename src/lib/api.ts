@@ -3,6 +3,9 @@ import type {
   Comment,
   Day,
   DayWithSessions,
+  ProjectPhase,
+  ProjectSubtask,
+  ProjectTask,
   Session,
   SessionWithChildren,
   Speaker,
@@ -196,13 +199,112 @@ export async function fetchComments(): Promise<Comment[]> {
   return (data ?? []) as Comment[];
 }
 
-export async function createComment(author: string, message: string) {
-  const { data, error } = await supabase.from("wkshp_comments").insert({ author, message }).select().single();
+export async function createComment(author: string, message: string, team: string) {
+  const { data, error } = await supabase.from("wkshp_comments").insert({ author, message, team }).select().single();
   if (error) throw error;
   return data as Comment;
 }
 
 export async function deleteComment(id: string) {
   const { error } = await supabase.from("wkshp_comments").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- shared project Gantt ----------
+//
+// These tables (project_phases/project_tasks/project_subtasks) belong to the
+// AKC-TIU dashboard's Project Charter, not this app — they live in the same
+// Supabase project so both dashboards read/write the exact same rows. We only
+// ever touch the one project row that is this workshop's FY2026 charter.
+// No "wkshp_" prefix here on purpose: these are AKC-TIU's tables.
+
+export const GANTT_PROJECT_ID = "innovation-program";
+
+// Matches AKC-TIU's own id scheme (src/lib/utils.ts generateId) — plain
+// lowercase-base36 strings, not uuids, since project_phases/tasks/subtasks
+// all use `id text primary key`. Exported (rather than generated inside the
+// insert* functions below) so callers can generate the id up front and use
+// it immediately for an optimistic local update, the same way AKC-TIU's own
+// useProjects.ts does — addPhase there returns the new id synchronously so
+// a drag-to-create-phase can seed a first task into it without waiting on
+// the network round trip.
+export function generateGanttId(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+export async function fetchProjectGantt(): Promise<{
+  phases: ProjectPhase[];
+  tasks: ProjectTask[];
+  subtasks: ProjectSubtask[];
+  start_date: string;
+  end_date: string;
+}> {
+  const [
+    { data: project, error: projectErr },
+    { data: phases, error: phaseErr },
+    { data: tasks, error: taskErr },
+    { data: subtasks, error: subErr },
+  ] = await Promise.all([
+    supabase.from("projects").select("start_date,end_date").eq("id", GANTT_PROJECT_ID).single(),
+    supabase.from("project_phases").select("*").eq("project_id", GANTT_PROJECT_ID).order("display_order"),
+    supabase.from("project_tasks").select("*").eq("project_id", GANTT_PROJECT_ID).order("display_order"),
+    supabase.from("project_subtasks").select("*").eq("project_id", GANTT_PROJECT_ID).order("display_order"),
+  ]);
+  const err = projectErr || phaseErr || taskErr || subErr;
+  if (err) throw err;
+  return {
+    phases: (phases ?? []) as ProjectPhase[],
+    tasks: (tasks ?? []) as ProjectTask[],
+    subtasks: (subtasks ?? []) as ProjectSubtask[],
+    start_date: (project as { start_date: string } | null)?.start_date ?? new Date().toISOString().slice(0, 10),
+    end_date: (project as { end_date: string } | null)?.end_date ?? new Date().toISOString().slice(0, 10),
+  };
+}
+
+export async function insertProjectPhase(row: ProjectPhase) {
+  const { error } = await supabase.from("project_phases").insert(row);
+  if (error) throw error;
+}
+
+export async function updateProjectPhase(id: string, patch: Partial<Omit<ProjectPhase, "id">>) {
+  const { data, error } = await supabase.from("project_phases").update(patch).eq("id", id).select().single();
+  if (error) throw error;
+  return data as ProjectPhase;
+}
+
+export async function deleteProjectPhase(id: string) {
+  const { error } = await supabase.from("project_phases").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function insertProjectTask(row: ProjectTask) {
+  const { error } = await supabase.from("project_tasks").insert(row);
+  if (error) throw error;
+}
+
+export async function updateProjectTask(id: string, patch: Partial<Omit<ProjectTask, "id">>) {
+  const { data, error } = await supabase.from("project_tasks").update(patch).eq("id", id).select().single();
+  if (error) throw error;
+  return data as ProjectTask;
+}
+
+export async function deleteProjectTask(id: string) {
+  const { error } = await supabase.from("project_tasks").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function insertProjectSubtask(row: ProjectSubtask) {
+  const { error } = await supabase.from("project_subtasks").insert(row);
+  if (error) throw error;
+}
+
+export async function updateProjectSubtask(id: string, patch: Partial<Omit<ProjectSubtask, "id">>) {
+  const { data, error } = await supabase.from("project_subtasks").update(patch).eq("id", id).select().single();
+  if (error) throw error;
+  return data as ProjectSubtask;
+}
+
+export async function deleteProjectSubtask(id: string) {
+  const { error } = await supabase.from("project_subtasks").delete().eq("id", id);
   if (error) throw error;
 }

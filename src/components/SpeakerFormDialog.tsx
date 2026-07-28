@@ -6,6 +6,7 @@ import { Field, inputClass, Button } from "@/components/ui/Field";
 import {
   ASEAN_COUNTRIES,
   CATEGORY_LABEL,
+  ORGANIZER_ORGS,
   SPEAKER_CATEGORIES,
   SPEAKER_STATUSES,
   STATUS_LABEL,
@@ -35,7 +36,9 @@ function empty(defaultCategory: SpeakerCategory): SpeakerFormValues {
     photo_url: "",
     email: "",
     phone: "",
-    status: "backup",
+    // Organizers skip the booking-status workflow entirely — they're always
+    // confirmed/prepared, so there's nothing to track.
+    status: defaultCategory === "organizer" ? "confirmed" : "backup",
     category: defaultCategory,
     country: "",
     notes: "",
@@ -96,21 +99,32 @@ function SpeakerForm({
         <Field label="Name *">
           <input className={inputClass} value={values.name} onChange={(e) => set("name", e.target.value)} placeholder="Full name" />
         </Field>
-        <Field label="Status">
-          <select className={inputClass} value={values.status} onChange={(e) => set("status", e.target.value as SpeakerStatus)}>
-            {SPEAKER_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </Field>
+        {/* Organizers skip the booking-status workflow — always confirmed/
+            prepared, so no Status field for them (see empty() above, which
+            already seeds new organizers with status "confirmed"). */}
+        {values.category !== "organizer" && (
+          <Field label="Status">
+            <select className={inputClass} value={values.status} onChange={(e) => set("status", e.target.value as SpeakerStatus)}>
+              {SPEAKER_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Category (sets avatar color)">
+          {/* "organizer" is intentionally left out of SPEAKER_CATEGORIES (so
+              this dropdown never offers "convert to Organizer" as a casual
+              option — that's the whole point of the Organizer Roster being
+              locked). It's added back in here only when editing a speaker
+              who is already an organizer, so their own edit dialog isn't
+              left showing a category the select has no option for. */}
           <select className={inputClass} value={values.category} onChange={(e) => set("category", e.target.value as SpeakerCategory)}>
-            {SPEAKER_CATEGORIES.map((c) => (
+            {(values.category === "organizer" ? [...SPEAKER_CATEGORIES, "organizer" as const] : SPEAKER_CATEGORIES).map((c) => (
               <option key={c} value={c}>
                 {CATEGORY_LABEL[c]}
               </option>
@@ -124,6 +138,18 @@ function SpeakerForm({
               {ASEAN_COUNTRIES.map((c) => (
                 <option key={c} value={c}>
                   {c}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
+        {values.category === "organizer" && (
+          <Field label="Organization">
+            <select className={inputClass} value={values.country} onChange={(e) => set("country", e.target.value)}>
+              <option value="">Unassigned</option>
+              {ORGANIZER_ORGS.map((org) => (
+                <option key={org} value={org}>
+                  {org}
                 </option>
               ))}
             </select>
@@ -177,13 +203,19 @@ function SpeakerForm({
             <Button
               variant="danger"
               onClick={async () => {
-                if (confirm(`Remove ${speaker.name} from the roster? This also removes them from any assigned sessions.`)) {
+                // "Delete" (not "Remove") on purpose — this is the one destructive
+                // action that takes them off the roster entirely, unlike the
+                // "Remove" buttons on a session/subsession's assigned-people list,
+                // which only unassign them from that one program and leave them
+                // in the roster. Keeping the wording distinct avoids the two
+                // getting confused for each other.
+                if (confirm(`Delete ${speaker.name} from the roster entirely? This also removes them from any assigned sessions.`)) {
                   await onDelete(speaker);
                   onClose();
                 }
               }}
             >
-              Remove speaker
+              Delete person
             </Button>
           )}
         </div>
@@ -216,7 +248,7 @@ export function SpeakerFormDialog({
   onDelete?: (speaker: Speaker) => Promise<void>;
 }) {
   return (
-    <Modal open={open} onClose={onClose} title={speaker ? "Edit Speaker" : "Add Potential Speaker"} widthClass="max-w-xl">
+    <Modal open={open} onClose={onClose} title={speaker ? "Edit Person" : "Add Person"} widthClass="max-w-xl">
       {open && <SpeakerForm speaker={speaker} defaultCategory={defaultCategory} onClose={onClose} onSave={onSave} onDelete={onDelete} />}
     </Modal>
   );

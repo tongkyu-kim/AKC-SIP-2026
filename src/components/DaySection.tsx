@@ -3,6 +3,7 @@
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { SessionCard } from "@/components/SessionCard";
 import { ChevronIcon } from "@/components/ui/ChevronIcon";
+import type { AssignmentKind } from "@/lib/dnd";
 import { ROW_GRID } from "@/lib/layout";
 import type { DayWithSessions, Speaker, SessionWithChildren, SubsessionWithSpeakers } from "@/lib/types";
 
@@ -23,6 +24,7 @@ export function DaySection({
   onEditSubsession,
   onAddSubsession,
   onOpenBio,
+  onRemoveTeam,
 }: {
   day: DayWithSessions;
   collapsed: boolean;
@@ -34,6 +36,7 @@ export function DaySection({
   onEditSubsession: (sub: SubsessionWithSpeakers) => void;
   onAddSubsession: (sessionId: string) => void;
   onOpenBio: (speaker: Speaker) => void;
+  onRemoveTeam: (kind: AssignmentKind, id: string, label: string) => void;
 }) {
   const dateLabel = formatDate(day.event_date);
 
@@ -92,6 +95,7 @@ export function DaySection({
                   onEditSubsession={onEditSubsession}
                   onAddSubsession={() => onAddSubsession(session.id)}
                   onOpenBio={onOpenBio}
+                  onRemoveTeam={onRemoveTeam}
                 />
               ))}
               {day.sessions.length === 0 && (

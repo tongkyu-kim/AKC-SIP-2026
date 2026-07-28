@@ -15,6 +15,10 @@ export function RosterCard({ speaker, onOpenBio }: { speaker: Speaker; onOpenBio
     data: { type: "speaker", source: "roster", speakerId: speaker.id, status: speaker.status },
   });
 
+  // Organizers skip the booking-status workflow — always a plain gray
+  // border rather than a status color, since there's no status to reflect.
+  const borderClass = speaker.category === "organizer" ? "border-zinc-300 dark:border-zinc-600" : STATUS_BORDER[speaker.status];
+
   return (
     <button
       ref={setNodeRef}
@@ -22,7 +26,7 @@ export function RosterCard({ speaker, onOpenBio }: { speaker: Speaker; onOpenBio
       {...attributes}
       onClick={() => onOpenBio(speaker)}
       style={{ transform: CSS.Translate.toString(transform) }}
-      className={`flex w-full cursor-grab select-none items-center gap-2 rounded-lg border-l-2 bg-white py-2 pl-2 pr-2.5 text-left text-sm shadow-sm hover:shadow active:cursor-grabbing dark:bg-zinc-900 ${STATUS_BORDER[speaker.status]} ${
+      className={`flex w-full cursor-grab select-none items-center gap-2 rounded-lg border-l-2 bg-white py-2 pl-2 pr-2.5 text-left text-sm shadow-sm hover:shadow active:cursor-grabbing dark:bg-zinc-900 ${borderClass} ${
         isDragging ? "z-10 opacity-40" : ""
       }`}
     >

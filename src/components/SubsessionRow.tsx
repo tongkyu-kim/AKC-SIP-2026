@@ -3,19 +3,23 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripIcon } from "@/components/ui/GripIcon";
-import { SpeakerChip } from "@/components/SpeakerChip";
+import { AssignedSpeakerChips } from "@/components/AssignedSpeakerChips";
 import { useActiveDragType } from "@/lib/dnd";
-import { ROW_GRID } from "@/lib/layout";
+import { ROW_GRID, ROW_GRID_LOGISTICS } from "@/lib/layout";
 import type { Speaker, SubsessionWithSpeakers } from "@/lib/types";
 
 export function SubsessionRow({
   subsession,
   sessionId,
+  wide = false,
+  duplicateSpeakerIds,
   onEdit,
   onOpenBio,
 }: {
   subsession: SubsessionWithSpeakers;
   sessionId: string;
+  wide?: boolean;
+  duplicateSpeakerIds?: Set<string>;
   onEdit: () => void;
   onOpenBio: (speaker: Speaker) => void;
 }) {
@@ -24,13 +28,16 @@ export function SubsessionRow({
     data: { type: "subsession", sessionId },
   });
   const activeDragType = useActiveDragType();
+  // Items (subsessions) only accept people now — teams live one level up, on
+  // the parent session. See TeamBadges on SessionCard for the mirror rule.
   const isSpeakerDropTarget = isOver && activeDragType === "speaker";
+  const rowGrid = wide ? ROW_GRID_LOGISTICS : ROW_GRID;
 
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`${ROW_GRID} gap-x-3 border-l-4 border-transparent bg-zinc-50/60 px-3 py-2 transition-colors dark:bg-zinc-950/30 ${
+      className={`${rowGrid} gap-x-3 border-l-4 border-transparent bg-zinc-50/60 px-3 py-2 transition-colors dark:bg-zinc-950/30 ${
         isSpeakerDropTarget ? "bg-sky-50 ring-2 ring-inset ring-sky-300 dark:bg-sky-950/40" : ""
       } ${isDragging ? "relative z-10 opacity-50 shadow-lg" : ""}`}
     >
@@ -52,14 +59,15 @@ export function SubsessionRow({
 
       {!subsession.hide_speakers && (
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {subsession.speakers.map((link) => (
-            <SpeakerChip key={link.id} link={link} fromKind="subsession" fromId={subsession.id} onOpenBio={onOpenBio} />
-          ))}
-          {subsession.speakers.length === 0 && (
-            <span className={`rounded-full border border-dashed px-2 py-0.5 text-xs ${isSpeakerDropTarget ? "border-sky-400 text-sky-600 dark:text-sky-400" : "border-zinc-200 text-zinc-400 dark:border-zinc-700 dark:text-zinc-600"}`}>
-              Drag here
-            </span>
-          )}
+          <AssignedSpeakerChips
+            links={subsession.speakers}
+            fromKind="subsession"
+            fromId={subsession.id}
+            duplicateSpeakerIds={duplicateSpeakerIds}
+            onOpenBio={onOpenBio}
+            emptyLabel="Drag here"
+            isDropTarget={isSpeakerDropTarget}
+          />
         </div>
       )}
 
