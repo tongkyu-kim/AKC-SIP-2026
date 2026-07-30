@@ -39,12 +39,17 @@ export function DaySection({
   onRemoveTeam: (kind: AssignmentKind, id: string, label: string) => void;
 }) {
   const dateLabel = formatDate(day.event_date);
+  // Post-Session is a bookend day like Pre-Session (optional/logistics-only,
+  // outside the main numbered sequence), so it shares the same header color
+  // — but keeps its own "5" badge and "Dates to be confirmed" fallback,
+  // which stay keyed on is_preworkshop specifically.
+  const isBookend = day.is_preworkshop || day.label === "Post-Session";
 
   return (
     <section className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
       <div
         className={`flex items-center gap-3 px-4 py-2.5 text-white ${
-          day.is_preworkshop ? "bg-gradient-to-r from-sky-400 to-cyan-400" : "bg-gradient-to-r from-indigo-600 to-sky-600"
+          isBookend ? "bg-gradient-to-r from-sky-400 to-cyan-400" : "bg-gradient-to-r from-indigo-600 to-sky-600"
         }`}
       >
         <button onClick={onToggleCollapsed} className="flex-shrink-0 rounded-md p-1 hover:bg-white/15" aria-label={collapsed ? "Expand day" : "Collapse day"}>
