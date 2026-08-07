@@ -103,7 +103,10 @@ export function ParticipantRoster({ speakers, onOpenBio }: { speakers: Speaker[]
         +
       </button>
 
-      <h2 className="mb-2 flex-shrink-0 pr-9 text-base font-semibold text-zinc-900 dark:text-zinc-100">Participant Roster</h2>
+      <h2 className="mb-2 flex flex-shrink-0 items-center gap-2 pr-9 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        Participant Roster
+        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">{participants.length}</span>
+      </h2>
 
       <div className="mb-3 flex flex-shrink-0 flex-wrap gap-1.5">
         <button
