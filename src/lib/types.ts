@@ -283,6 +283,49 @@ export function teamOf(comment: Comment): string {
   return comment.team && COMMENT_TEAMS.includes(comment.team) ? comment.team : "Others";
 }
 
+// ---- budget allocation matrix ----
+
+export type BudgetCategory = "flight" | "train" | "hotel" | "luncheon" | "dinner" | "honorarium";
+
+export const BUDGET_CATEGORIES: BudgetCategory[] = ["flight", "train", "hotel", "luncheon", "dinner", "honorarium"];
+
+export const BUDGET_CATEGORY_LABEL: Record<BudgetCategory, string> = {
+  flight: "Flight",
+  train: "Train",
+  hotel: "Hotel",
+  luncheon: "Luncheon",
+  dinner: "Dinner",
+  honorarium: "Honorarium",
+};
+
+export type BudgetStatus = "O" | "--";
+
+// One (speaker, category) cell in the matrix. A missing row (no allocation
+// fetched for that pair) reads the same as an explicit '--' with no org --
+// see BUDGET_CELL_DEFAULT in BudgetPopup.
+export interface BudgetAllocation {
+  id: string;
+  speaker_id: string;
+  category: BudgetCategory;
+  org: string | null;
+  status: BudgetStatus;
+  memo: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Collapses a Speaker's finer-grained category into the 3 statuses the
+// budget table shows (moderators read as "Speaker" here -- they don't get
+// their own budget column, there's no separate cost-responsibility
+// distinction for them).
+export type BudgetParticipantStatus = "VIP" | "Speaker" | "Participant";
+
+export function budgetParticipantStatus(category: SpeakerCategory): BudgetParticipantStatus {
+  if (category === "vip") return "VIP";
+  if (category === "participant") return "Participant";
+  return "Speaker";
+}
+
 // ---- shared project Gantt (same Supabase tables as the AKC-TIU dashboard's
 // Project Charter — project_phases/project_tasks/project_subtasks, scoped to
 // project_id "innovation-program", the FY2026 charter for this workshop) ----

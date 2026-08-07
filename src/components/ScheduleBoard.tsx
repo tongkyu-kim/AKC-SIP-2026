@@ -14,13 +14,14 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { GanttChart, MessageSquare } from "lucide-react";
+import { GanttChart, MessageSquare, Wallet } from "lucide-react";
 import { DaySection } from "@/components/DaySection";
 import { SpeakersPanel } from "@/components/SpeakersPanel";
 import { ParticipantRoster } from "@/components/ParticipantRoster";
 import { OrganizerRoster } from "@/components/OrganizerRoster";
 import { CommentLog } from "@/components/CommentLog";
 import { ProjectGanttPopup } from "@/components/ProjectGanttPopup";
+import { BudgetPopup } from "@/components/BudgetPopup";
 import { SpeakerBioDialog } from "@/components/SpeakerBioDialog";
 import { SpeakerFormDialog } from "@/components/SpeakerFormDialog";
 import { SessionFormDialog, type SessionFormValues } from "@/components/SessionFormDialog";
@@ -90,6 +91,7 @@ export function ScheduleBoard({
   const [activeDrag, setActiveDrag] = useState<DragData | null>(null);
   const [commentLogOpen, setCommentLogOpen] = useState(false);
   const [ganttOpen, setGanttOpen] = useState(false);
+  const [budgetOpen, setBudgetOpen] = useState(false);
 
   // Collapse state lives here (not locally in DaySection/SessionCard) so the
   // global collapse-all/expand bar can control every day and session at once,
@@ -496,6 +498,14 @@ export function ScheduleBoard({
               >
                 <GanttChart size={16} />
               </button>
+              <button
+                onClick={() => setBudgetOpen(true)}
+                aria-label="Budget Allocation"
+                title="Budget Allocation"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm hover:bg-white/25"
+              >
+                <Wallet size={16} />
+              </button>
             </div>
           </div>
         </div>
@@ -630,6 +640,7 @@ export function ScheduleBoard({
 
       <CommentLog open={commentLogOpen} onClose={() => setCommentLogOpen(false)} comments={comments} />
       <ProjectGanttPopup open={ganttOpen} onClose={() => setGanttOpen(false)} />
+      <BudgetPopup open={budgetOpen} onClose={() => setBudgetOpen(false)} speakers={speakers} />
     </div>
   );
 }

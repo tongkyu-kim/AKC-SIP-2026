@@ -1,5 +1,8 @@
 import { supabase } from "@/lib/supabase/client";
 import type {
+  BudgetAllocation,
+  BudgetCategory,
+  BudgetStatus,
   Comment,
   Day,
   DayWithSessions,
@@ -307,4 +310,30 @@ export async function updateProjectSubtask(id: string, patch: Partial<Omit<Proje
 export async function deleteProjectSubtask(id: string) {
   const { error } = await supabase.from("project_subtasks").delete().eq("id", id);
   if (error) throw error;
+}
+
+// ---------- budget allocation matrix ----------
+
+export async function fetchBudgetAllocations(): Promise<BudgetAllocation[]> {
+  const { data, error } = await supabase.from("wkshp_budget_allocations").select("*");
+  if (error) throw error;
+  return (data ?? []) as BudgetAllocation[];
+}
+
+// One row per (speaker, category) -- upserted on that unique pair, so
+// editing a cell never needs to know whether a row already exists yet.
+export async function upsertBudgetAllocation(input: {
+  speaker_id: string;
+  category: BudgetCategory;
+  org: string | null;
+  status: BudgetStatus;
+  memo: string | null;
+}): Promise<BudgetAllocation> {
+  const { data, error } = await supabase
+    .from("wkshp_budget_allocations")
+    .upsert(input, { onConflict: "speaker_id,category" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as BudgetAllocation;
 }
