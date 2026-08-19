@@ -34,6 +34,15 @@ export function useDashboardData(initialDays: DayWithSessions[], initialSpeakers
       debounceRef.current = setTimeout(reload, 250);
     };
 
+    // The server-rendered initialDays/initialSpeakers can already be stale
+    // by the time this mounts (a route-cached page, a write that landed in
+    // the gap between SSR and hydration, another tab's edit) and the
+    // postgres_changes subscription below only reacts to *future* writes --
+    // it never self-corrects a snapshot that was wrong to begin with. Schedule
+    // one reload up front (via the same debounced path as everything else)
+    // so every mount starts from live data.
+    scheduleReload();
+
     const channel = supabase.channel("dashboard-sync");
     for (const table of WATCHED_TABLES) {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, scheduleReload);
