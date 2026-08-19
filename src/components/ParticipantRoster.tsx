@@ -8,7 +8,7 @@ import { GroupPill } from "@/components/GroupPill";
 import { SpeakerFormDialog, type SpeakerFormValues } from "@/components/SpeakerFormDialog";
 import { useActiveDragType } from "@/lib/dnd";
 import { createSpeaker } from "@/lib/api";
-import { ASEAN_COUNTRIES, PARTICIPANT_STATUSES, PARTICIPANT_STATUS_LABEL, type Speaker, type SpeakerStatus } from "@/lib/types";
+import { ASEAN_COUNTRIES, STATUSES, type Speaker, type SpeakerStatus } from "@/lib/types";
 
 const UNASSIGNED = "Others";
 const GROUPS = [...ASEAN_COUNTRIES, UNASSIGNED];
@@ -48,7 +48,7 @@ function ParticipantStatusSection({ status, participants, onOpenBio }: { status:
   return (
     <div className="rounded-lg bg-zinc-50 dark:bg-zinc-950/40">
       <div className="flex items-center justify-between px-2.5 pt-2.5 pb-1.5">
-        <StatusBadge status={status} label={PARTICIPANT_STATUS_LABEL[status]} />
+        <StatusBadge status={status} />
         <span className="text-xs text-zinc-400">{participants.length}</span>
       </div>
       <div
@@ -66,7 +66,15 @@ function ParticipantStatusSection({ status, participants, onOpenBio }: { status:
   );
 }
 
-export function ParticipantRoster({ speakers, onOpenBio }: { speakers: Speaker[]; onOpenBio: (s: Speaker) => void }) {
+export function ParticipantRoster({
+  speakers,
+  onOpenBio,
+  onCreated,
+}: {
+  speakers: Speaker[];
+  onOpenBio: (s: Speaker) => void;
+  onCreated: (s: Speaker) => void;
+}) {
   const [formOpen, setFormOpen] = useState(false);
   const [view, setView] = useState<"country" | "status" | "all">("all");
 
@@ -82,7 +90,7 @@ export function ParticipantRoster({ speakers, onOpenBio }: { speakers: Speaker[]
   }, [participants]);
 
   const byStatus = useMemo(() => {
-    const map = new Map<SpeakerStatus, Speaker[]>(PARTICIPANT_STATUSES.map((s) => [s, []]));
+    const map = new Map<SpeakerStatus, Speaker[]>(STATUSES.map((s) => [s, []]));
     for (const p of participants) map.get(p.status)?.push(p);
     return map;
   }, [participants]);
@@ -90,7 +98,7 @@ export function ParticipantRoster({ speakers, onOpenBio }: { speakers: Speaker[]
   const allSorted = useMemo(() => [...participants].sort((a, b) => a.name.localeCompare(b.name)), [participants]);
 
   const handleSave = async (values: SpeakerFormValues) => {
-    await createSpeaker(values);
+    onCreated(await createSpeaker(values));
   };
 
   return (
@@ -158,7 +166,7 @@ export function ParticipantRoster({ speakers, onOpenBio }: { speakers: Speaker[]
 
         {view === "status" && (
           <div className="flex flex-col gap-3">
-            {PARTICIPANT_STATUSES.map((status) => (
+            {STATUSES.map((status) => (
               <ParticipantStatusSection key={status} status={status} participants={byStatus.get(status) ?? []} onOpenBio={onOpenBio} />
             ))}
           </div>

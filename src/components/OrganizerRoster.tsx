@@ -48,7 +48,15 @@ function OrgSection({ org, organizers, onOpenBio }: { org: string; organizers: S
 // or Participant rosters' regrouping targets and vice versa — see the
 // isOrganizer guard in ScheduleBoard. They can still be dragged onto the
 // schedule to assign them to a program, exactly like everyone else.
-export function OrganizerRoster({ speakers, onOpenBio }: { speakers: Speaker[]; onOpenBio: (s: Speaker) => void }) {
+export function OrganizerRoster({
+  speakers,
+  onOpenBio,
+  onCreated,
+}: {
+  speakers: Speaker[];
+  onOpenBio: (s: Speaker) => void;
+  onCreated: (s: Speaker) => void;
+}) {
   const [formOpen, setFormOpen] = useState(false);
   const [view, setView] = useState<"organization" | "all">("all");
 
@@ -66,7 +74,7 @@ export function OrganizerRoster({ speakers, onOpenBio }: { speakers: Speaker[]; 
   const allSorted = useMemo(() => [...organizers].sort((a, b) => a.name.localeCompare(b.name)), [organizers]);
 
   const handleSave = async (values: SpeakerFormValues) => {
-    await createSpeaker(values);
+    onCreated(await createSpeaker(values));
   };
 
   return (

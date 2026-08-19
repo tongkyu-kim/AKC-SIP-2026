@@ -43,7 +43,6 @@ import {
   reorderSubsessions,
   updateSession,
   updateSpeaker,
-  updateSpeakerStatus,
   updateSubsession,
 } from "@/lib/api";
 import type { Comment, DayWithSessions, Speaker, Session, SessionWithChildren, SubsessionWithSpeakers } from "@/lib/types";
@@ -75,7 +74,7 @@ export function ScheduleBoard({
   initialSpeakers: Speaker[];
   initialComments: Comment[];
 }) {
-  const { days, speakers, error, setDays } = useDashboardData(initialDays, initialSpeakers);
+  const { days, speakers, error, setDays, setSpeakers } = useDashboardData(initialDays, initialSpeakers);
   const { comments } = useComments(initialComments);
 
   const [bioSpeaker, setBioSpeaker] = useState<Speaker | null>(null);
@@ -180,6 +179,37 @@ export function ScheduleBoard({
       })),
     );
   }
+
+  // ---------- speakers ----------
+  //
+  // Every mutation here applies the change to local `speakers` state first
+  // (optimistic) and rolls back + alerts on failure, rather than firing the
+  // Supabase call and waiting on the realtime `postgres_changes` subscription
+  // to eventually reconcile it. That subscription is a nice-to-have for
+  // multi-tab sync, not something a status/country/category drag should
+  // depend on to render correctly -- relying on it made drags look like they
+  // "revert" any time the write failed silently or the realtime channel was
+  // slow/disconnected, since nothing local ever changed to begin with.
+
+  function patchSpeakerLocal(id: string, patch: Partial<Speaker>) {
+    setSpeakers((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  }
+
+  async function mutateSpeaker(id: string, patch: Partial<Speaker>) {
+    const previous = speakers.find((s) => s.id === id);
+    if (!previous) return;
+    patchSpeakerLocal(id, patch);
+    try {
+      await updateSpeaker(id, patch);
+    } catch (e) {
+      patchSpeakerLocal(id, previous);
+      alert(`Failed to save change for ${previous.name}: ${e instanceof Error ? e.message : "unknown error"}`);
+    }
+  }
+
+  const handleSpeakerCreated = (speaker: Speaker) => {
+    setSpeakers((prev) => [...prev, speaker]);
+  };
 
   // ---------- sessions ----------
 
@@ -389,19 +419,19 @@ export function ScheduleBoard({
         // it unassigns them, in addition to updating status if it landed in a different column.
         if (a.source === "assignment") handleRemoveSpeakerLink(a.linkId);
         const targetStatus = o.status as Speaker["status"];
-        if (targetStatus !== a.status) updateSpeakerStatus(a.speakerId, targetStatus);
+        if (targetStatus !== a.status) mutateSpeaker(a.speakerId, { status: targetStatus });
         return;
       }
       if (o?.type === "country") {
         if (isOrganizer) return;
         if (a.source === "assignment") handleRemoveSpeakerLink(a.linkId);
-        updateSpeaker(a.speakerId, { country: o.country || null });
+        mutateSpeaker(a.speakerId, { country: o.country || null });
         return;
       }
       if (o?.type === "category") {
         if (isOrganizer) return;
         if (a.source === "assignment") handleRemoveSpeakerLink(a.linkId);
-        updateSpeaker(a.speakerId, { category: o.category });
+        mutateSpeaker(a.speakerId, { category: o.category });
         return;
       }
       if (o?.type === "organization") {
@@ -410,7 +440,7 @@ export function ScheduleBoard({
         // acquiring an org-shaped `country` value.
         if (!isOrganizer) return;
         if (a.source === "assignment") handleRemoveSpeakerLink(a.linkId);
-        updateSpeaker(a.speakerId, { country: o.organization || null });
+        mutateSpeaker(a.speakerId, { country: o.organization || null });
         return;
       }
       // People only live on items (subsessions) now — a session (the program
@@ -568,15 +598,15 @@ export function ScheduleBoard({
                       bottom regardless of scroll — this wrapper just needs to give
                       it a bounded height to fill. */}
                   <div className="lg:min-h-0">
-                    <SpeakersPanel speakers={speakers} onOpenBio={handleOpenBio} />
+                    <SpeakersPanel speakers={speakers} onOpenBio={handleOpenBio} onCreated={handleSpeakerCreated} />
                   </div>
 
                   <div className="lg:min-h-0">
-                    <ParticipantRoster speakers={speakers} onOpenBio={handleOpenBio} />
+                    <ParticipantRoster speakers={speakers} onOpenBio={handleOpenBio} onCreated={handleSpeakerCreated} />
                   </div>
 
                   <div className="lg:min-h-0">
-                    <OrganizerRoster speakers={speakers} onOpenBio={handleOpenBio} />
+                    <OrganizerRoster speakers={speakers} onOpenBio={handleOpenBio} onCreated={handleSpeakerCreated} />
                   </div>
                 </div>
               </ActiveDragTypeContext.Provider>
@@ -604,10 +634,16 @@ export function ScheduleBoard({
               speaker={bioSpeaker}
               onClose={() => setSpeakerFormOpen(false)}
               onSave={async (values) => {
-                if (bioSpeaker) await updateSpeaker(bioSpeaker.id, values);
+                if (bioSpeaker) await mutateSpeaker(bioSpeaker.id, values);
               }}
               onDelete={async (speaker) => {
-                await deleteSpeaker(speaker.id);
+                try {
+                  await deleteSpeaker(speaker.id);
+                  setSpeakers((prev) => prev.filter((s) => s.id !== speaker.id));
+                } catch (e) {
+                  alert(`Failed to delete ${speaker.name}: ${e instanceof Error ? e.message : "unknown error"}`);
+                  return;
+                }
                 setBioSpeaker(null);
                 setBioAssignment(null);
               }}

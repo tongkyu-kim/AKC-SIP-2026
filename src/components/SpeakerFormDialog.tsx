@@ -8,7 +8,7 @@ import {
   CATEGORY_LABEL,
   ORGANIZER_ORGS,
   SPEAKER_CATEGORIES,
-  SPEAKER_STATUSES,
+  STATUSES,
   STATUS_LABEL,
   type Speaker,
   type SpeakerCategory,
@@ -37,8 +37,8 @@ function empty(defaultCategory: SpeakerCategory): SpeakerFormValues {
     email: "",
     phone: "",
     // Organizers skip the booking-status workflow entirely — they're always
-    // confirmed/prepared, so there's nothing to track.
-    status: defaultCategory === "organizer" ? "confirmed" : "backup",
+    // prepared, so there's nothing to track.
+    status: defaultCategory === "organizer" ? "prepared" : "backup",
     category: defaultCategory,
     country: "",
     notes: "",
@@ -105,7 +105,7 @@ function SpeakerForm({
         {values.category !== "organizer" && (
           <Field label="Status">
             <select className={inputClass} value={values.status} onChange={(e) => set("status", e.target.value as SpeakerStatus)}>
-              {SPEAKER_STATUSES.map((s) => (
+              {STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {STATUS_LABEL[s]}
                 </option>

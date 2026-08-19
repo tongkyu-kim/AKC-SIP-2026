@@ -46,5 +46,5 @@ export function useDashboardData(initialDays: DayWithSessions[], initialSpeakers
     };
   }, [reload]);
 
-  return { days, speakers, loading: false, error, reload, setDays };
+  return { days, speakers, loading: false, error, reload, setDays, setSpeakers };
 }
